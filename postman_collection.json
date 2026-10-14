@@ -1,0 +1,79 @@
+{
+  "info": {
+    "name": "Trust Forever Marriage Bureau API",
+    "description": "Requests map to application routes reported by php artisan route:list. Set api_base_url. Login establishes a Laravel session cookie; Postman retains cookies automatically. api_token is an optional placeholder for a separately issued Sanctum personal access token; POST /api/login does not return one. No credentials or live token are included. Requests use synthetic example values.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{api_token}}", "type": "string"}]
+  },
+  "variable": [
+    {"key": "api_base_url", "value": "http://localhost:8000", "type": "string"},
+    {"key": "api_token", "value": "", "type": "string"},
+    {"key": "profile_id", "value": "1", "type": "string"},
+    {"key": "user_id", "value": "1", "type": "string"},
+    {"key": "role_id", "value": "1", "type": "string"},
+    {"key": "permission_id", "value": "1", "type": "string"},
+    {"key": "storage_path", "value": "example.txt", "type": "string"}
+  ],
+  "item": [
+    {"name": "Framework and package routes (implementation is package-owned)", "item": [
+      {"name": "Welcome page", "request": {"method": "GET", "header": [], "url": "{{api_base_url}}/"}},
+      {"name": "Laravel Boost browser logs (payload unknown)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/_boost/browser-logs", "description": "Package-owned contract; empty object is a placeholder, not a documented accepted payload."}},
+      {"name": "Sanctum CSRF cookie", "request": {"method": "GET", "header": [], "url": "{{api_base_url}}/sanctum/csrf-cookie"}},
+      {"name": "Read public storage file", "request": {"method": "GET", "header": [], "url": "{{api_base_url}}/storage/{{storage_path}}"}},
+      {"name": "Write local storage file (framework contract unknown)", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/octet-stream"}], "body": {"mode": "file", "file": {"src": ""}}, "url": "{{api_base_url}}/storage/{{storage_path}}", "description": "Registered framework route; request details were not reliably discoverable from app source."}},
+      {"name": "Health check", "request": {"method": "GET", "header": [], "url": "{{api_base_url}}/up"}}
+    ]},
+    {"name": "Authentication", "item": [
+      {"name": "Login (session; not a token issuer)", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"email\": \"operator@example.test\",\n  \"password\": \"<password>\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/login", "description": "Session login. Supply local credentials at run time; no real credentials are included."}},
+      {"name": "Current user", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/me"}},
+      {"name": "Update current user (multipart; optional file)", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "body": {"mode": "formdata", "formdata": [{"key": "name", "value": "Example Operator", "type": "text", "disabled": true}, {"key": "profile_picture", "type": "file", "src": [], "disabled": true}]}, "url": "{{api_base_url}}/api/me"}},
+      {"name": "Logout", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/logout"}},
+      {"name": "Current roles and permissions", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/me/permissions"}}
+    ]},
+    {"name": "Profiles", "item": [
+      {"name": "List/search/filter profiles", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{api_base_url}}/api/profiles?search=Sample&gender=female&marital_status=unmarried&city=Lahore&sect=Sunni&caste=Rajput&employed=false", "host": ["{{api_base_url}}"], "path": ["api", "profiles"], "query": [{"key": "search", "value": "Sample"}, {"key": "gender", "value": "female"}, {"key": "marital_status", "value": "unmarried"}, {"key": "city", "value": "Lahore"}, {"key": "sect", "value": "Sunni"}, {"key": "caste", "value": "Rajput"}, {"key": "employed", "value": "false"}]}}},
+      {"name": "Create profile (JSON example; omit personal details or replace with consented data)", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"Sample Profile\",\n  \"gender\": \"female\",\n  \"marital_status\": \"unmarried\",\n  \"date_of_birth\": \"1998-05-12\",\n  \"city\": \"Lahore\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/profiles"}},
+      {"name": "Create profile with image (multipart template)", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "body": {"mode": "formdata", "formdata": [{"key": "name", "value": "Sample Profile", "type": "text"}, {"key": "gender", "value": "female", "type": "text"}, {"key": "marital_status", "value": "unmarried", "type": "text"}, {"key": "date_of_birth", "value": "1998-05-12", "type": "text"}, {"key": "profile_picture", "type": "file", "src": [], "disabled": true}]}, "url": "{{api_base_url}}/api/profiles"}},
+      {"name": "Show profile", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/profiles/{{profile_id}}"}},
+      {"name": "Update profile (PATCH)", "request": {"method": "PATCH", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"city\": \"Karachi\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/profiles/{{profile_id}}"}},
+      {"name": "Update profile (PUT)", "request": {"method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"city\": \"Karachi\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/profiles/{{profile_id}}"}},
+      {"name": "Update profile with image (multipart template)", "request": {"method": "PATCH", "header": [{"key": "Accept", "value": "application/json"}], "body": {"mode": "formdata", "formdata": [{"key": "name", "value": "Updated Sample", "type": "text"}, {"key": "profile_picture", "type": "file", "src": [], "disabled": true}, {"key": "remove_profile_picture", "value": "false", "type": "text", "disabled": true}]}, "url": "{{api_base_url}}/api/profiles/{{profile_id}}"}},
+      {"name": "Delete profile", "request": {"method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/profiles/{{profile_id}}"}},
+      {"name": "Dashboard profile summary", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/dashboard/profile-summary"}}
+    ]},
+    {"name": "Users", "item": [
+      {"name": "List/search users", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{api_base_url}}/api/users?search=staff", "host": ["{{api_base_url}}"], "path": ["api", "users"], "query": [{"key": "search", "value": "staff"}]}}},
+      {"name": "Create user", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"New Staff\",\n  \"email\": \"staff@example.test\",\n  \"password\": \"<password>\",\n  \"password_confirmation\": \"<password>\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/users"}},
+      {"name": "Show user", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/users/{{user_id}}"}},
+      {"name": "Update user (PUT; name and email required)", "request": {"method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Staff\",\n  \"email\": \"staff@example.test\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/users/{{user_id}}"}},
+      {"name": "Update user (PATCH; name and email required)", "request": {"method": "PATCH", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Staff\",\n  \"email\": \"staff@example.test\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/users/{{user_id}}"}},
+      {"name": "Update user password", "request": {"method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"password\": \"<password>\",\n  \"password_confirmation\": \"<password>\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/users/{{user_id}}/password"}},
+      {"name": "Delete user", "request": {"method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/users/{{user_id}}"}},
+      {"name": "Role options", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/user-management/roles"}}
+    ]},
+    {"name": "Roles", "item": [
+      {"name": "List roles", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/roles"}},
+      {"name": "Create role", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"profile-editor\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/roles"}},
+      {"name": "Show role", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/roles/{{role_id}}"}},
+      {"name": "Update role", "request": {"method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"profile-editor-updated\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/roles/{{role_id}}"}},
+      {"name": "Delete role", "request": {"method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/roles/{{role_id}}"}},
+      {"name": "Replace role permissions", "request": {"method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"permissions\": [{{permission_id}}]\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/roles/{{role_id}}/permissions"}}
+    ]},
+    {"name": "Permissions", "item": [
+      {"name": "List permissions", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/permissions"}},
+      {"name": "Create permission", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"profiles.view\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/permissions"}},
+      {"name": "Update permission", "request": {"method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"profiles.read\"\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/permissions/{{permission_id}}"}},
+      {"name": "Delete permission", "request": {"method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/permissions/{{permission_id}}"}}
+    ]},
+    {"name": "User roles and permissions", "item": [
+      {"name": "List user roles", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/users/{{user_id}}/roles"}},
+      {"name": "Add user roles", "request": {"method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"roles\": [\"profile-editor\"]\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/users/{{user_id}}/roles"}},
+      {"name": "Replace user roles", "request": {"method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"roles\": [\"profile-editor\"]\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/users/{{user_id}}/roles"}},
+      {"name": "Remove user roles", "request": {"method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"roles\": [\"profile-editor\"]\n}", "options": {"raw": {"language": "json"}}}, "url": "{{api_base_url}}/api/users/{{user_id}}/roles"}},
+      {"name": "User effective permissions", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{api_base_url}}/api/users/{{user_id}}/permissions"}}
+    ]}
+  ]
+}

@@ -1,0 +1,628 @@
+openapi: 3.1.0
+info:
+  title: Trust Forever Marriage Bureau API
+  version: 1.0.0
+  description: >-
+    Generated from this Laravel checkout and php artisan route:list. Application routes use
+    stateful Laravel sessions via auth:sanctum; login does not issue a bearer token. The
+    bearer scheme is a Postman/import placeholder only. Response schemas describe controller
+    output and were not captured from a live server. Unreliable/package-owned details are noted.
+servers:
+  - url: http://localhost:8000
+    description: Local development example; configure for the deployment in use.
+tags:
+  - name: Framework
+  - name: Authentication
+  - name: Profiles
+  - name: Dashboard
+  - name: Users
+  - name: Roles
+  - name: Permissions
+  - name: User roles
+paths:
+  /:
+    get:
+      tags: [Framework]
+      operationId: welcomePage
+      description: Web route returning Laravel's welcome view; response details are framework/view-owned.
+      responses:
+        '200': {description: HTML welcome page; exact body is not specified here}
+  /_boost/browser-logs:
+    post:
+      tags: [Framework]
+      operationId: boostBrowserLogs
+      description: Registered by Laravel Boost. Request schema and behavior are package-owned and not determined from application controllers.
+      requestBody:
+        required: false
+        description: Package-specific payload not reliably determined from application source.
+        content:
+          application/json: {schema: {type: object, additionalProperties: true}}
+      responses:
+        default: {description: Package-defined response; status and body depend on Laravel Boost}
+  /sanctum/csrf-cookie:
+    get:
+      tags: [Framework]
+      operationId: sanctumCsrfCookie
+      description: Sanctum package route; sets CSRF cookie/session headers. Exact response behavior is package-owned.
+      responses:
+        default: {description: Package-defined CSRF cookie response}
+  /storage/{path}:
+    parameters: [{in: path, name: path, required: true, schema: {type: string}, description: 'Storage-relative path; package route constraint unspecified'}]
+    get:
+      tags: [Framework]
+      operationId: getLocalStorageFile
+      description: Framework local storage serving route; content type and status depend on file and filesystem configuration.
+      responses:
+        default: {description: Framework-defined file response}
+    put:
+      tags: [Framework]
+      operationId: putLocalStorageFile
+      description: Framework storage upload route. Request body and access behavior are not determined from application source.
+      requestBody:
+        required: false
+        description: Framework-owned upload contract; not reliably determined here.
+        content: {application/octet-stream: {schema: {type: string, format: binary}}}
+      responses:
+        default: {description: Framework-defined storage response}
+  /up:
+    get:
+      tags: [Framework]
+      operationId: healthCheck
+      description: Laravel health route.
+      responses:
+        default: {description: Framework health response}
+  /api/login:
+    post:
+      tags: [Authentication]
+      operationId: login
+      description: Public; rate limited to 6 attempts/minute. Establishes a session, no token returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [email, password], properties: {email: {type: string, format: email}, password: {type: string}}}
+      responses:
+        '200': {description: Authenticated user, session cookie managed by Laravel, content: {application/json: {schema: {$ref: '#/components/schemas/AuthUserResponse'}}}}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '429': {description: Login throttle exceeded}
+  /api/logout:
+    post:
+      tags: [Authentication]
+      operationId: logout
+      security: [{sessionCookie: []}]
+      responses:
+        '204': {description: Session invalidated; empty body}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/me:
+    get:
+      tags: [Authentication]
+      operationId: currentUser
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: Safe user fields, content: {application/json: {schema: {$ref: '#/components/schemas/AuthUserResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    post:
+      tags: [Authentication]
+      operationId: updateCurrentUser
+      security: [{sessionCookie: []}]
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema: {type: object, properties: {name: {type: string, maxLength: 255}, profile_picture: {type: string, format: binary, description: 'JPG/JPEG/PNG/WebP, max 2048 KB'}}}
+          application/json:
+            schema: {type: object, properties: {name: {type: string, maxLength: 255}}}
+      responses:
+        '200': {description: Updated safe user fields, content: {application/json: {schema: {$ref: '#/components/schemas/AuthUserResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '500': {description: Profile picture storage failure, content: {application/json: {schema: {$ref: '#/components/schemas/Message'}}}}
+  /api/me/permissions:
+    get:
+      tags: [Authentication]
+      operationId: currentPermissions
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: Current role and effective permission names, content: {application/json: {schema: {$ref: '#/components/schemas/UserPermissions'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/profiles:
+    get:
+      tags: [Profiles]
+      operationId: listProfiles
+      security: [{sessionCookie: []}]
+      parameters:
+        - {in: query, name: search, schema: {type: string}, description: 'Substring over name, profile_id, city, caste, qualification'}
+        - {in: query, name: gender, schema: {type: string, enum: [female, male]}}
+        - {in: query, name: marital_status, schema: {type: string, enum: [unmarried, married, divorced, widowed]}}
+        - {in: query, name: city, schema: {type: string}}
+        - {in: query, name: sect, schema: {type: string}}
+        - {in: query, name: caste, schema: {type: string}}
+        - {in: query, name: employed, schema: {type: boolean}}
+      responses:
+        '200': {description: Unpaginated profiles ordered newest first, content: {application/json: {schema: {$ref: '#/components/schemas/ProfileList'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Profiles]
+      operationId: createProfile
+      security: [{sessionCookie: []}]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              allOf: [{$ref: '#/components/schemas/ProfileInput'}]
+              required: [name, gender, marital_status, date_of_birth]
+          application/json:
+            schema:
+              allOf: [{$ref: '#/components/schemas/ProfileInput'}]
+              required: [name, gender, marital_status, date_of_birth]
+      responses:
+        '201': {description: Created profile, content: {application/json: {schema: {$ref: '#/components/schemas/ProfileResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/profiles/{profile}:
+    parameters: [{in: path, name: profile, required: true, schema: {type: integer}, description: Profile primary key}]
+    get:
+      tags: [Profiles]
+      operationId: showProfile
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: Profile, content: {application/json: {schema: {$ref: '#/components/schemas/ProfileResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Profiles]
+      operationId: updateProfile
+      security: [{sessionCookie: []}]
+      requestBody:
+        required: true
+        content: {multipart/form-data: {schema: {$ref: '#/components/schemas/ProfileUpdate'}}, application/json: {schema: {$ref: '#/components/schemas/ProfileUpdate'}}}
+      responses:
+        '200': {description: Updated profile, content: {application/json: {schema: {$ref: '#/components/schemas/ProfileResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    patch:
+      tags: [Profiles]
+      operationId: partiallyUpdateProfile
+      security: [{sessionCookie: []}]
+      requestBody:
+        required: true
+        content: {multipart/form-data: {schema: {$ref: '#/components/schemas/ProfileUpdate'}}, application/json: {schema: {$ref: '#/components/schemas/ProfileUpdate'}}}
+      responses:
+        '200': {description: Updated profile, content: {application/json: {schema: {$ref: '#/components/schemas/ProfileResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      tags: [Profiles]
+      operationId: deleteProfile
+      security: [{sessionCookie: []}]
+      responses:
+        '204': {description: Profile and stored image deleted; empty body}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/dashboard/profile-summary:
+    get:
+      tags: [Dashboard]
+      operationId: profileSummary
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: Profile counts and up to six newest profiles, content: {application/json: {schema: {$ref: '#/components/schemas/DashboardSummary'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/users:
+    get:
+      tags: [Users]
+      operationId: listUsers
+      security: [{sessionCookie: []}]
+      parameters: [{in: query, name: search, schema: {type: string}, description: Substring over name or email}]
+      responses:
+        '200': {description: Unpaginated name-sorted users, content: {application/json: {schema: {$ref: '#/components/schemas/UserList'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Users]
+      operationId: createUser
+      security: [{sessionCookie: []}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/UserCreate'}}}
+      responses:
+        '201': {description: Created user, content: {application/json: {schema: {$ref: '#/components/schemas/UserResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/users/{user}:
+    parameters: [{in: path, name: user, required: true, schema: {type: integer}, description: User primary key}]
+    get:
+      tags: [Users]
+      operationId: showUser
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: User, content: {application/json: {schema: {$ref: '#/components/schemas/UserResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Users]
+      operationId: updateUser
+      security: [{sessionCookie: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/UserUpdate'}}}}
+      responses:
+        '200': {description: Updated user, content: {application/json: {schema: {$ref: '#/components/schemas/UserResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    patch:
+      tags: [Users]
+      operationId: patchUser
+      description: Route accepts PATCH, but name and email remain required by validation.
+      security: [{sessionCookie: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/UserUpdate'}}}}
+      responses:
+        '200': {description: Updated user, content: {application/json: {schema: {$ref: '#/components/schemas/UserResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      tags: [Users]
+      operationId: deleteUser
+      security: [{sessionCookie: []}]
+      responses:
+        '204': {description: User deleted; empty body}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/users/{user}/password:
+    put:
+      tags: [Users]
+      operationId: updateUserPassword
+      security: [{sessionCookie: []}]
+      parameters: [{in: path, name: user, required: true, schema: {type: integer}}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [password, password_confirmation], properties: {password: {type: string, minLength: 8, description: Must include letters and numbers}, password_confirmation: {type: string}}}}}}
+      responses:
+        '204': {description: Password changed; empty body}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/user-management/roles:
+    get:
+      tags: [Users]
+      operationId: roleOptions
+      description: Controller accepts either user.create or user.update permission.
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: Sorted web-guard role options, content: {application/json: {schema: {type: object, properties: {roles: {type: array, items: {type: object, properties: {id: {type: integer}, name: {type: string}}}}}}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/roles:
+    get:
+      tags: [Roles]
+      operationId: listRoles
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: Sorted web roles with permissions, content: {application/json: {schema: {$ref: '#/components/schemas/RoleList'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Roles]
+      operationId: createRole
+      security: [{sessionCookie: []}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name], properties: {name: {type: string, maxLength: 255}}}}}}
+      responses:
+        '201': {description: Created role, content: {application/json: {schema: {$ref: '#/components/schemas/RoleResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/roles/{role}:
+    parameters: [{in: path, name: role, required: true, schema: {type: integer}, description: Role primary key}]
+    get:
+      tags: [Roles]
+      operationId: showRole
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: Role and permissions, content: {application/json: {schema: {$ref: '#/components/schemas/RoleResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Roles]
+      operationId: updateRole
+      security: [{sessionCookie: []}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name], properties: {name: {type: string, maxLength: 255}}}}}}
+      responses:
+        '200': {description: Updated role, content: {application/json: {schema: {$ref: '#/components/schemas/RoleResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      tags: [Roles]
+      operationId: deleteRole
+      security: [{sessionCookie: []}]
+      responses:
+        '204': {description: Role deleted; administrator role is protected}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/roles/{role}/permissions:
+    put:
+      tags: [Roles]
+      operationId: syncRolePermissions
+      security: [{sessionCookie: []}]
+      parameters: [{in: path, name: role, required: true, schema: {type: integer}}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [permissions], properties: {permissions: {type: array, items: {type: integer, description: Existing web-guard permission ID}, uniqueItems: true}}}}}}
+      responses:
+        '200': {description: Role with synchronized permissions, content: {application/json: {schema: {$ref: '#/components/schemas/RoleResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/permissions:
+    get:
+      tags: [Permissions]
+      operationId: listPermissions
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: Sorted web permissions, content: {application/json: {schema: {$ref: '#/components/schemas/PermissionList'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Permissions]
+      operationId: createPermission
+      security: [{sessionCookie: []}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name], properties: {name: {type: string, maxLength: 255}}}}}}
+      responses:
+        '201': {description: Created permission, content: {application/json: {schema: {$ref: '#/components/schemas/PermissionResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/permissions/{permission}:
+    parameters: [{in: path, name: permission, required: true, schema: {type: integer}, description: Permission primary key}]
+    put:
+      tags: [Permissions]
+      operationId: updatePermission
+      security: [{sessionCookie: []}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name], properties: {name: {type: string, maxLength: 255}}}}}}
+      responses:
+        '200': {description: Updated permission, content: {application/json: {schema: {$ref: '#/components/schemas/PermissionResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      tags: [Permissions]
+      operationId: deletePermission
+      security: [{sessionCookie: []}]
+      responses:
+        '204': {description: Permission deleted; empty body}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/users/{user}/roles:
+    parameters: [{in: path, name: user, required: true, schema: {type: integer}, description: User primary key}]
+    get:
+      tags: [User roles]
+      operationId: listUserRoles
+      security: [{sessionCookie: []}]
+      responses:
+        '200': {description: Role names, content: {application/json: {schema: {$ref: '#/components/schemas/RoleNames'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    post:
+      tags: [User roles]
+      operationId: addUserRoles
+      security: [{sessionCookie: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RoleNamesInput'}}}}
+      responses:
+        '200': {description: Current role names, content: {application/json: {schema: {$ref: '#/components/schemas/RoleNames'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    put:
+      tags: [User roles]
+      operationId: replaceUserRoles
+      security: [{sessionCookie: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RoleNamesInput'}}}}
+      responses:
+        '200': {description: Current role names, content: {application/json: {schema: {$ref: '#/components/schemas/RoleNames'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      tags: [User roles]
+      operationId: removeUserRoles
+      security: [{sessionCookie: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RoleNamesInput'}}}}
+      responses:
+        '200': {description: Current role names, content: {application/json: {schema: {$ref: '#/components/schemas/RoleNames'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /api/users/{user}/permissions:
+    get:
+      tags: [User roles]
+      operationId: getUserPermissions
+      security: [{sessionCookie: []}]
+      parameters: [{in: path, name: user, required: true, schema: {type: integer}}]
+      responses:
+        '200': {description: User role names and effective permissions, content: {application/json: {schema: {$ref: '#/components/schemas/UserPermissions'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: laravel_session
+      description: Stateful session cookie established by POST /api/login. A CSRF token/header may also be required for browser/stateful requests.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Not implemented by these routes; no endpoint returns a bearer token.
+  responses:
+    ValidationError:
+      description: Laravel validation failure.
+      content: {application/json: {schema: {$ref: '#/components/schemas/ValidationError'}}}
+    Unauthorized: {description: Authentication required}
+    Forbidden: {description: Required permission absent}
+    NotFound: {description: Resource not found}
+  schemas:
+    Message: {type: object, properties: {message: {type: string}}}
+    ValidationError:
+      type: object
+      properties:
+        message: {type: string}
+        errors: {type: object, additionalProperties: {type: array, items: {type: string}}}
+    AuthUser:
+      type: object
+      required: [id, name, email, profile_picture_url]
+      properties: {id: {type: integer}, name: {type: string}, email: {type: string, format: email}, profile_picture_url: {type: [string, 'null']}}
+    AuthUserResponse: {type: object, properties: {user: {$ref: '#/components/schemas/AuthUser'}}}
+    User:
+      type: object
+      properties: {id: {type: integer}, name: {type: string}, email: {type: string, format: email}, roles: {type: array, items: {type: string}}, created_at: {type: [string, 'null'], format: date-time}, updated_at: {type: [string, 'null'], format: date-time}}
+    UserResponse: {type: object, properties: {user: {$ref: '#/components/schemas/User'}}}
+    UserList: {type: object, properties: {users: {type: array, items: {$ref: '#/components/schemas/User'}}}}
+    UserCreate:
+      type: object
+      required: [name, email, password, password_confirmation]
+      properties: {name: {type: string, maxLength: 255}, email: {type: string, format: email, maxLength: 255}, password: {type: string, minLength: 8, description: Letters and numbers required}, password_confirmation: {type: string}, role_id: {type: [integer, 'null']}}
+    UserUpdate:
+      type: object
+      required: [name, email]
+      properties: {name: {type: string, maxLength: 255}, email: {type: string, format: email, maxLength: 255}, role_id: {type: [integer, 'null']}}
+    Profile:
+      type: object
+      description: Fields are directly mapped from ProfileResource. Some nullable status depends on database values.
+      properties:
+        id: {type: integer}
+        profile_id: {type: string}
+        profile_picture_url: {type: string}
+        name: {type: string}
+        gender: {type: string, enum: [female, male]}
+        marital_status: {type: string, enum: [unmarried, married, divorced, widowed]}
+        date_of_birth: {type: [string, 'null'], format: date}
+        age: {type: [integer, 'null']}
+        height: {type: [string, 'null']}
+        sect: {type: [string, 'null']}
+        caste: {type: [string, 'null']}
+        language: {type: [string, 'null']}
+        qualification: {type: [string, 'null']}
+        educational_institution: {type: [string, 'null']}
+        employed: {type: [boolean, 'null']}
+        job: {type: [string, 'null']}
+        business: {type: [string, 'null']}
+        income: {type: [string, 'null']}
+        father_details: {type: [string, 'null']}
+        father_name: {type: [string, 'null']}
+        father_occupation: {type: [string, 'null']}
+        mother_details: {type: [string, 'null']}
+        other_details: {type: [string, 'null']}
+        house_size: {type: [string, 'null']}
+        society: {type: [string, 'null']}
+        city: {type: [string, 'null']}
+        sisters_count: {type: integer}
+        sisters_details: {type: [string, 'null']}
+        married_sisters_count: {type: integer}
+        brothers_count: {type: integer}
+        brothers_details: {type: [string, 'null']}
+        married_brothers_count: {type: integer}
+        partner_requirements: {type: [string, 'null']}
+        father_whatsapp: {type: [string, 'null']}
+        mother_whatsapp: {type: [string, 'null']}
+        whatsapp_number: {type: [string, 'null']}
+        parents_whatsapp: {type: [string, 'null']}
+        created_at: {type: [string, 'null'], format: date-time}
+    ProfileResponse: {type: object, properties: {profile: {$ref: '#/components/schemas/Profile'}}}
+    ProfileList: {type: object, properties: {profiles: {type: array, items: {$ref: '#/components/schemas/Profile'}}}}
+    ProfileInput:
+      type: object
+      description: Additional optional fields are detailed in API_DOCUMENTATION.md; accepted upload is JPG/JPEG/PNG/WebP, max 2048 KB.
+      properties:
+        name: {type: string, maxLength: 255}
+        gender: {type: string, enum: [female, male]}
+        marital_status: {type: string, enum: [unmarried, married, divorced, widowed]}
+        date_of_birth: {type: string, format: date, description: Must be before today}
+        profile_picture: {type: string, format: binary}
+        remove_profile_picture: {type: boolean}
+        height: {type: [string, 'null'], maxLength: 40}
+        sect: {type: [string, 'null'], maxLength: 255}
+        caste: {type: [string, 'null'], maxLength: 255}
+        language: {type: [string, 'null'], maxLength: 255}
+        qualification: {type: [string, 'null'], maxLength: 255}
+        educational_institution: {type: [string, 'null'], maxLength: 255}
+        employed: {type: [boolean, 'null']}
+        job: {type: [string, 'null'], maxLength: 255}
+        business: {type: [string, 'null'], maxLength: 255}
+        income: {type: [string, 'null'], maxLength: 255}
+        father_details: {type: [string, 'null'], maxLength: 5000}
+        father_name: {type: [string, 'null'], maxLength: 255}
+        father_occupation: {type: [string, 'null'], maxLength: 255}
+        mother_details: {type: [string, 'null'], maxLength: 5000}
+        other_details: {type: [string, 'null'], maxLength: 12000}
+        house_size: {type: [string, 'null'], maxLength: 255}
+        society: {type: [string, 'null'], maxLength: 255}
+        city: {type: [string, 'null'], maxLength: 255}
+        sisters_count: {type: integer, minimum: 0, maximum: 255}
+        sisters_details: {type: [string, 'null'], maxLength: 5000}
+        married_sisters_count: {type: integer, minimum: 0, maximum: 255}
+        brothers_count: {type: integer, minimum: 0, maximum: 255}
+        brothers_details: {type: [string, 'null'], maxLength: 5000}
+        married_brothers_count: {type: integer, minimum: 0, maximum: 255}
+        partner_requirements: {type: [string, 'null'], maxLength: 12000}
+        father_whatsapp: {type: [string, 'null'], maxLength: 30, pattern: '^\+?[0-9 ()-]{7,30}$'}
+        mother_whatsapp: {type: [string, 'null'], maxLength: 30, pattern: '^\+?[0-9 ()-]{7,30}$'}
+        whatsapp_number: {type: [string, 'null'], maxLength: 30, pattern: '^\+?[0-9 ()-]{7,30}$'}
+        parents_whatsapp: {type: [string, 'null'], maxLength: 30, pattern: '^\+?[0-9 ()-]{7,30}$'}
+    ProfileUpdate:
+      allOf:
+        - {$ref: '#/components/schemas/ProfileInput'}
+      description: Same fields and constraints as ProfileInput, but name, gender, marital_status, and date_of_birth are optional on update.
+    DashboardSummary:
+      type: object
+      properties:
+        statistics:
+          type: object
+          properties: {total_profiles: {type: integer}, male_profiles: {type: integer}, female_profiles: {type: integer}, unmarried_profiles: {type: integer}, married_profiles: {type: integer}}
+        recent_profiles:
+          type: array
+          maxItems: 6
+          items:
+            type: object
+            properties: {id: {type: integer}, profile_id: {type: string}, profile_picture_url: {type: string}, name: {type: string}, gender: {type: string}, date_of_birth: {type: [string, 'null'], format: date}, age: {type: [integer, 'null']}, city: {type: [string, 'null']}, qualification: {type: [string, 'null']}, caste: {type: [string, 'null']}, sect: {type: [string, 'null']}}
+    Role:
+      type: object
+      properties: {id: {type: integer}, name: {type: string}, guard_name: {type: string}, permissions: {type: array, items: {type: object, properties: {id: {type: integer}, name: {type: string}}}}}
+    RoleResponse: {type: object, properties: {role: {$ref: '#/components/schemas/Role'}}}
+    RoleList: {type: object, properties: {roles: {type: array, items: {$ref: '#/components/schemas/Role'}}}}
+    Permission:
+      type: object
+      properties: {id: {type: integer}, name: {type: string}, guard_name: {type: string}}
+    PermissionResponse: {type: object, properties: {permission: {$ref: '#/components/schemas/Permission'}}}
+    PermissionList: {type: object, properties: {permissions: {type: array, items: {$ref: '#/components/schemas/Permission'}}}}
+    RoleNames: {type: object, properties: {roles: {type: array, items: {type: string}}}}
+    RoleNamesInput:
+      type: object
+      required: [roles]
+      properties: {roles: {type: array, items: {type: string, description: Existing web-guard role name}, uniqueItems: true}}
+    UserPermissions:
+      type: object
+      properties: {roles: {type: array, items: {type: string}}, permissions: {type: array, items: {type: string}}}
