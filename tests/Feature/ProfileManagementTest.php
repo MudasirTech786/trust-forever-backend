@@ -90,6 +90,36 @@ class ProfileManagementTest extends TestCase
             ->assertInvalid(['father_whatsapp']);
     }
 
+    public function test_profile_and_dashboard_return_the_uploaded_and_default_picture_urls(): void
+    {
+        $this->assertFileExists(storage_path('app/public/matrimonial-profiles/avatar.jpg'));
+        Storage::fake('public');
+        $user = User::factory()->create();
+        foreach (['profiles.view', 'profiles.create'] as $permissionName) {
+            $user->givePermissionTo(Permission::create(['name' => $permissionName, 'guard_name' => 'web']));
+        }
+        $this->actingAs($user, 'web');
+
+        $photoResponse = $this->post('/api/profiles', [
+            ...$this->profilePayload(),
+            'profile_picture' => $this->fakePng('portrait.png'),
+        ], ['Accept' => 'application/json'])->assertCreated();
+        $photoProfile = Profile::findOrFail($photoResponse->json('profile.id'));
+        $photoUrl = Storage::disk('public')->url($photoProfile->profile_picture);
+        $this->assertSame($photoUrl, $photoResponse->json('profile.profile_picture_url'));
+
+        $defaultResponse = $this->postJson('/api/profiles', $this->profilePayload())->assertCreated();
+        $defaultProfile = Profile::findOrFail($defaultResponse->json('profile.id'));
+        $defaultUrl = Storage::disk('public')->url('matrimonial-profiles/avatar.jpg');
+        $this->assertNull($defaultProfile->profile_picture);
+        $this->assertSame($defaultUrl, $defaultResponse->json('profile.profile_picture_url'));
+
+        $dashboard = $this->getJson('/api/dashboard/profile-summary')->assertOk();
+        $recentProfiles = collect($dashboard->json('recent_profiles'))->keyBy('id');
+        $this->assertSame($photoUrl, $recentProfiles[$photoProfile->id]['profile_picture_url']);
+        $this->assertSame($defaultUrl, $recentProfiles[$defaultProfile->id]['profile_picture_url']);
+    }
+
     /** @return array<string, mixed> */
     private function profilePayload(): array
     {

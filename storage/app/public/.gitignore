@@ -1,2 +1,5 @@
 *
 !.gitignore
+!matrimonial-profiles/
+matrimonial-profiles/*
+!matrimonial-profiles/avatar.jpg
