@@ -13,7 +13,7 @@ class Profile extends Model
     use HasFactory;
 
     protected $fillable = [
-        'profile_picture', 'name', 'gender', 'marital_status', 'date_of_birth', 'height',
+        'profile_picture', 'name', 'gender', 'marital_status', 'date_of_birth', 'age', 'height',
         'sect', 'caste', 'language', 'qualification', 'educational_institution', 'employed', 'job', 'business', 'income',
         'father_details', 'father_name', 'father_occupation', 'mother_details', 'other_details', 'house_size', 'society', 'city', 'sisters_count',
         'sisters_details', 'married_sisters_count', 'brothers_count', 'brothers_details',
@@ -23,7 +23,14 @@ class Profile extends Model
 
     protected function casts(): array
     {
-        return ['date_of_birth' => 'date:Y-m-d', 'employed' => 'boolean'];
+        return [
+            'date_of_birth' => 'date:Y-m-d',
+            'employed' => 'boolean',
+            'sisters_count' => 'integer',
+            'married_sisters_count' => 'integer',
+            'brothers_count' => 'integer',
+            'married_brothers_count' => 'integer',
+        ];
     }
 
     protected static function booted(): void

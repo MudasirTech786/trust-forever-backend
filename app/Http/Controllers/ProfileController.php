@@ -24,6 +24,7 @@ class ProfileController extends Controller
                 'gender',
                 'marital_status',
                 'date_of_birth',
+                'age',
                 'height',
                 'sect',
                 'caste',
@@ -171,7 +172,7 @@ class ProfileController extends Controller
             ->first();
 
         $recentProfiles = Profile::query()
-            ->select(['id', 'profile_id', 'profile_picture', 'name', 'gender', 'date_of_birth', 'city', 'qualification', 'caste', 'sect'])
+            ->select(['id', 'profile_id', 'profile_picture', 'name', 'gender', 'age', 'date_of_birth', 'city', 'qualification', 'caste', 'sect'])
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->limit(6)
@@ -193,8 +194,7 @@ class ProfileController extends Controller
                     : Storage::disk('public')->url('matrimonial-profiles/avatar.jpg'),
                 'name' => $profile->name,
                 'gender' => $profile->gender,
-                'date_of_birth' => $profile->date_of_birth?->format('Y-m-d'),
-                'age' => $profile->date_of_birth?->age,
+                'age' => $profile->age ?? $profile->date_of_birth?->age,
                 'city' => $profile->city,
                 'qualification' => $profile->qualification,
                 'caste' => $profile->caste,
@@ -298,7 +298,7 @@ class ProfileController extends Controller
             'profile_id' => $profile->profile_id,
             'gender' => $profile->gender,
             'marital_status' => $profile->marital_status,
-            'age' => $profile->date_of_birth?->age,
+            'age' => $profile->age ?? $profile->date_of_birth?->age,
             'height' => $profile->height,
             'sect' => $profile->sect,
             'caste' => $profile->caste,
@@ -409,10 +409,11 @@ class ProfileController extends Controller
         return $request->validate([
             'profile_picture' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_profile_picture' => ['sometimes', 'boolean'],
-            'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
-            'gender' => [$creating ? 'required' : 'sometimes', Rule::in(['female', 'male'])],
-            'marital_status' => [$creating ? 'required' : 'sometimes', Rule::in(['unmarried', 'married', 'divorced', 'widowed'])],
-            'date_of_birth' => [$creating ? 'required' : 'sometimes', 'date_format:Y-m-d', 'before:today'],
+            'name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'gender' => ['sometimes', 'nullable', Rule::in(['female', 'male'])],
+            'marital_status' => ['sometimes', 'nullable', Rule::in(['unmarried', 'married', 'divorced', 'widowed'])],
+            'age' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:120'],
+            'date_of_birth' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'before:today'],
             'height' => ['sometimes', 'nullable', 'string', 'max:40'],
             'sect' => ['sometimes', 'nullable', 'string', 'max:255'],
             'caste' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -431,12 +432,12 @@ class ProfileController extends Controller
             'house_size' => ['sometimes', 'nullable', 'string', 'max:255'],
             'society' => ['sometimes', 'nullable', 'string', 'max:255'],
             'city' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'sisters_count' => ['sometimes', 'integer', 'min:0', 'max:255'],
+            'sisters_count' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:255'],
             'sisters_details' => ['sometimes', 'nullable', 'string', 'max:5000'],
-            'married_sisters_count' => ['sometimes', 'integer', 'min:0', 'max:255'],
-            'brothers_count' => ['sometimes', 'integer', 'min:0', 'max:255'],
+            'married_sisters_count' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:255'],
+            'brothers_count' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:255'],
             'brothers_details' => ['sometimes', 'nullable', 'string', 'max:5000'],
-            'married_brothers_count' => ['sometimes', 'integer', 'min:0', 'max:255'],
+            'married_brothers_count' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:255'],
             'partner_requirements' => ['sometimes', 'nullable', 'string', 'max:12000'],
             'father_whatsapp' => ['sometimes', 'nullable', 'string', 'max:30', 'regex:/^\\+?[0-9 ()-]{7,30}$/'],
             'mother_whatsapp' => ['sometimes', 'nullable', 'string', 'max:30', 'regex:/^\\+?[0-9 ()-]{7,30}$/'],

@@ -90,6 +90,48 @@ class ProfileManagementTest extends TestCase
             ->assertInvalid(['father_whatsapp']);
     }
 
+    public function test_profiles_can_be_created_with_only_name_age_or_no_details(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::create(['name' => 'profiles.create', 'guard_name' => 'web']));
+        $this->actingAs($user, 'web');
+
+        $this->postJson('/api/profiles', ['name' => 'Name only'])
+            ->assertCreated()->assertJsonPath('profile.name', 'Name only')->assertJsonPath('profile.age', null);
+        $this->postJson('/api/profiles', ['age' => 34])
+            ->assertCreated()->assertJsonPath('profile.age', 34);
+        $this->postJson('/api/profiles', ['age' => 27])
+            ->assertCreated()->assertJsonPath('profile.age', 27);
+        $this->postJson('/api/profiles', [])
+            ->assertCreated()->assertJsonPath('profile.name', null)->assertJsonPath('profile.age', null);
+        $this->postJson('/api/profiles', ['age' => 121])->assertUnprocessable()->assertInvalid(['age']);
+    }
+
+    public function test_sibling_counts_are_optional_nullable_and_validated_when_provided(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::create(['name' => 'profiles.create', 'guard_name' => 'web']));
+        $this->actingAs($user, 'web');
+
+        $empty = $this->postJson('/api/profiles', [
+            'sisters_count' => '  ', 'brothers_count' => '',
+            'married_sisters_count' => '', 'married_brothers_count' => '',
+        ])->assertCreated()->json('profile');
+        $this->assertNull($empty['sisters_count']);
+        $this->assertNull($empty['brothers_count']);
+
+        $this->postJson('/api/profiles', ['sisters_count' => '2'])->assertCreated()
+            ->assertJsonPath('profile.sisters_count', 2)->assertJsonPath('profile.brothers_count', null);
+        $this->postJson('/api/profiles', ['brothers_count' => '3'])->assertCreated()
+            ->assertJsonPath('profile.brothers_count', 3)->assertJsonPath('profile.sisters_count', null);
+        $this->postJson('/api/profiles', [
+            'sisters_count' => '2', 'brothers_count' => '3',
+            'married_sisters_count' => '1', 'married_brothers_count' => '2',
+        ])->assertCreated()->assertJsonPath('profile.sisters_count', 2)->assertJsonPath('profile.brothers_count', 3);
+        $this->postJson('/api/profiles', ['sisters_count' => 'several'])->assertUnprocessable()->assertInvalid(['sisters_count']);
+        $this->postJson('/api/profiles', ['brothers_count' => 'many'])->assertUnprocessable()->assertInvalid(['brothers_count']);
+    }
+
     public function test_profile_and_dashboard_return_the_uploaded_and_default_picture_urls(): void
     {
         $this->assertFileExists(storage_path('app/public/matrimonial-profiles/avatar.jpg'));

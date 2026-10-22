@@ -152,11 +152,9 @@ paths:
           multipart/form-data:
             schema:
               allOf: [{$ref: '#/components/schemas/ProfileInput'}]
-              required: [name, gender, marital_status, date_of_birth]
           application/json:
             schema:
               allOf: [{$ref: '#/components/schemas/ProfileInput'}]
-              required: [name, gender, marital_status, date_of_birth]
       responses:
         '201': {description: Created profile, content: {application/json: {schema: {$ref: '#/components/schemas/ProfileResponse'}}}}
         '401': {$ref: '#/components/responses/Unauthorized'}
@@ -519,7 +517,7 @@ components:
         name: {type: string}
         gender: {type: string, enum: [female, male]}
         marital_status: {type: string, enum: [unmarried, married, divorced, widowed]}
-        date_of_birth: {type: [string, 'null'], format: date}
+        age: {type: [integer, 'null'], minimum: 0, maximum: 120}
         age: {type: [integer, 'null']}
         height: {type: [string, 'null']}
         sect: {type: [string, 'null']}
@@ -560,7 +558,7 @@ components:
         name: {type: string, maxLength: 255}
         gender: {type: string, enum: [female, male]}
         marital_status: {type: string, enum: [unmarried, married, divorced, widowed]}
-        date_of_birth: {type: string, format: date, description: Must be before today}
+        age: {type: integer, minimum: 0, maximum: 120, nullable: true}
         profile_picture: {type: string, format: binary}
         remove_profile_picture: {type: boolean}
         height: {type: [string, 'null'], maxLength: 40}
@@ -595,7 +593,7 @@ components:
     ProfileUpdate:
       allOf:
         - {$ref: '#/components/schemas/ProfileInput'}
-      description: Same fields and constraints as ProfileInput, but name, gender, marital_status, and date_of_birth are optional on update.
+      description: All fields are optional. Age, when supplied, must be an integer from 0 to 120.
     DashboardSummary:
       type: object
       properties:
@@ -607,7 +605,7 @@ components:
           maxItems: 6
           items:
             type: object
-            properties: {id: {type: integer}, profile_id: {type: string}, profile_picture_url: {type: string}, name: {type: string}, gender: {type: string}, date_of_birth: {type: [string, 'null'], format: date}, age: {type: [integer, 'null']}, city: {type: [string, 'null']}, qualification: {type: [string, 'null']}, caste: {type: [string, 'null']}, sect: {type: [string, 'null']}}
+            properties: {id: {type: integer}, profile_id: {type: string}, profile_picture_url: {type: string}, name: {type: [string, 'null']}, gender: {type: [string, 'null']}, age: {type: [integer, 'null']}, city: {type: [string, 'null']}, qualification: {type: [string, 'null']}, caste: {type: [string, 'null']}, sect: {type: [string, 'null']}}
     Role:
       type: object
       properties: {id: {type: integer}, name: {type: string}, guard_name: {type: string}, permissions: {type: array, items: {type: object, properties: {id: {type: integer}, name: {type: string}}}}}
